@@ -68,12 +68,6 @@ cp .env.example .env
 └── README.md
 ```
 
-## Roadmap
-
-- [ ] [Planned improvement 1]
-- [ ] [Planned improvement 2]
-- [ ] [Planned improvement 3]
-
 ## Known Limitations
 
 - [Limitation, trade-off, or rough edge]
