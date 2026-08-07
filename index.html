@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A tiny generator for impossible choices.">
+  <title>Dilemma Generator</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f8f3e8;
+      --muted: #aaa49a;
+      --paper: #171717;
+      --edge: #34332f;
+      --hot: #ff6b4a;
+      --cold: #80a9ff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: Georgia, 'Times New Roman', serif;
+    }
+
+    body::before {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      content: '';
+      opacity: .42;
+      background:
+        radial-gradient(circle at 14% 14%, rgba(255, 107, 74, .22), transparent 30%),
+        radial-gradient(circle at 88% 82%, rgba(128, 169, 255, .16), transparent 28%);
+    }
+
+    main {
+      display: grid;
+      align-content: center;
+      width: min(100% - 40px, 760px);
+      min-height: 100vh;
+      margin: auto;
+      padding: 64px 0;
+    }
+
+    .eyebrow {
+      margin: 0 0 18px;
+      color: var(--hot);
+      font: 700 12px/1.2 Arial, sans-serif;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 620px;
+      margin: 0;
+      font-size: clamp(3.5rem, 11vw, 7.4rem);
+      font-weight: 400;
+      letter-spacing: -.07em;
+      line-height: .82;
+    }
+
+    .intro {
+      max-width: 430px;
+      margin: 32px 0 44px;
+      color: var(--muted);
+      font: 16px/1.55 Arial, sans-serif;
+    }
+
+    .dilemma {
+      min-height: 185px;
+      margin-bottom: 28px;
+      padding: 30px 32px;
+      border: 1px solid var(--edge);
+      border-left: 4px solid var(--cold);
+      background: rgba(23, 23, 23, .78);
+      box-shadow: 14px 14px 0 rgba(255, 107, 74, .08);
+    }
+
+    .dilemma.is-new { animation: reveal .45s ease-out both; }
+
+    .dilemma-label {
+      margin-bottom: 20px;
+      color: var(--cold);
+      font: 700 11px/1.2 Arial, sans-serif;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    #dilemma-text {
+      margin: 0;
+      font-size: clamp(1.45rem, 3.5vw, 2.25rem);
+      line-height: 1.18;
+    }
+
+    #generate {
+      width: 100%;
+      padding: 19px 24px;
+      border: 0;
+      color: #171717;
+      background: var(--hot);
+      cursor: pointer;
+      font: 700 13px/1 Arial, sans-serif;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      transition: transform .2s ease, background .2s ease;
+    }
+
+    #generate:hover { background: #ff866b; transform: translate(-3px, -3px); }
+    #generate:active { transform: translate(0); }
+    #generate:focus-visible { outline: 3px solid var(--cold); outline-offset: 4px; }
+
+    footer {
+      margin-top: 30px;
+      color: #a7a39b;
+      font: 11px/1.4 Arial, sans-serif;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    @keyframes reveal {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 520px) {
+      main { width: min(100% - 28px, 760px); padding: 42px 0; }
+      .dilemma { padding: 24px 20px; }
+      .intro { margin: 26px 0 32px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">A question with no clean answer</p>
+    <h1>Dilemma<br>generator</h1>
+    <p class="intro">One hundred impossible choices, picked at random. What would you do?</p>
+
+    <section class="dilemma" aria-live="polite" aria-atomic="true">
+      <div class="dilemma-label">Your dilemma</div>
+      <p id="dilemma-text">Click the button. Make a choice.</p>
+    </section>
+
+    <button id="generate" type="button">Give me a dilemma</button>
+    <footer>For curious minds &middot; No answer key</footer>
+  </main>
+
+  <script>
+    const dilemmas = [
+      'Would you rather always know when someone is lying, or never be lied to again?',
+      'Would you rather have a rewind button for your life, or a pause button?',
+      'Would you rather be able to speak every language, or play every instrument?',
+      'Would you rather be famous for something embarrassing, or unknown for something brilliant?',
+      'Would you rather live without music, or live without books?',
+      'Would you rather have dinner with your past self, or your future self?',
+      'Would you rather find your soulmate but meet them at the wrong time, or never find them?',
+      'Would you rather always arrive an hour early, or ten minutes late?',
+      'Would you rather remember every detail of your life, or forget every painful memory?',
+      'Would you rather be able to read minds, or make people forget one thing?',
+      'Would you rather have unlimited money but no free time, or unlimited free time but little money?',
+      'Would you rather lose your sense of taste, or your sense of smell?',
+      'Would you rather be the funniest person in every room, or the wisest?',
+      'Would you rather discover a new planet, or a new species on Earth?',
+      'Would you rather have a perfect memory, or perfect intuition?',
+      'Would you rather live in a world with no crime, or no poverty?',
+      'Would you rather have one year of perfect health, or ten extra years of ordinary health?',
+      'Would you rather never need to sleep, or never need to eat?',
+      'Would you rather be able to teleport, or become invisible at will?',
+      'Would you rather be loved by everyone, or deeply understood by one person?',
+      'Would you rather know how you will die, or when you will die?',
+      'Would you rather have a home in the mountains, or a home by the sea?',
+      'Would you rather give up your phone for a year, or coffee for a year?',
+      'Would you rather have a job you love with an unpredictable income, or a boring job that makes you rich?',
+      'Would you rather be able to fly, or breathe underwater?',
+      'Would you rather change one decision from your past, or see one decision from your future?',
+      'Would you rather never feel jealousy, or never feel regret?',
+      'Would you rather be stranded in a desert, or stranded in a snowstorm?',
+      'Would you rather have a personal chef, or a personal travel guide?',
+      'Would you rather be remembered for your kindness, or your achievements?',
+      'Would you rather have one wish today, or three wishes in ten years?',
+      'Would you rather always have perfect weather, or always have the perfect playlist?',
+      'Would you rather be able to talk to animals, or understand every human language?',
+      'Would you rather be the only person who can see ghosts, or the only person who cannot?',
+      'Would you rather be trapped in a room with a snake, or a room full of spiders?',
+      'Would you rather never be bored, or never be tired?',
+      'Would you rather have the courage to say anything, or the wisdom to know when not to?',
+      'Would you rather always win arguments, or never have arguments?',
+      'Would you rather be able to fix any machine, or heal any injury?',
+      'Would you rather have your dream house, or travel the world for a year?',
+      'Would you rather lose all your photos, or all your messages?',
+      'Would you rather be able to see ten minutes into the future, or ten years into the past?',
+      'Would you rather be stuck in an elevator for eight hours, or on a delayed flight for twelve?',
+      'Would you rather have an extra hour every day, or an extra day every week?',
+      'Would you rather always get the best seat, or always find the shortest line?',
+      'Would you rather never have to clean, or never have to cook?',
+      'Would you rather be brilliant but lonely, or average but surrounded by friends?',
+      'Would you rather wake up with a new talent, or a new language?',
+      'Would you rather live in the past with modern knowledge, or the future with no knowledge of it?',
+      'Would you rather have a guaranteed happy ending, or an unpredictable story?',
+      'Would you rather be able to control fire, or control water?',
+      'Would you rather spend a month without mirrors, or a month without clocks?',
+      'Would you rather have every door open for you, or every road be clear?',
+      'Would you rather be trusted by everyone, or trusted by yourself?',
+      'Would you rather receive an honest answer to any question, or ask one perfect question?',
+      'Would you rather always know what to say, or always know what to do?',
+      'Would you rather have a pause in every difficult conversation, or a reset after every mistake?',
+      'Would you rather be able to change your appearance, or your voice?',
+      'Would you rather have a library that never ends, or a garden that never wilts?',
+      'Would you rather be the first to arrive at the future, or the last to leave the past?',
+      'Would you rather never experience heartbreak, or never experience fear?',
+      'Would you rather have your own private island, or your own private spaceship?',
+      'Would you rather be able to predict trends, or predict storms?',
+      'Would you rather get one perfect day repeated forever, or a different day forever?',
+      'Would you rather have a second chance at one relationship, or one opportunity?',
+      'Would you rather live somewhere that is always summer, or always autumn?',
+      'Would you rather have a photographic memory, or never forget a face?',
+      'Would you rather be paid to learn, or paid to teach?',
+      'Would you rather know the answer to one mystery, or become part of one?',
+      'Would you rather have an honest critic, or an enthusiastic supporter?',
+      'Would you rather be able to shrink to any size, or grow to any size?',
+      'Would you rather never lose your keys, or never lose your train of thought?',
+      'Would you rather master one craft, or be good at everything?',
+      'Would you rather always have a full battery, or a strong Wi-Fi signal?',
+      'Would you rather be able to summon any meal, or any book?',
+      'Would you rather have a map of every place, or a key to every lock?',
+      'Would you rather be the best storyteller, or the best listener?',
+      'Would you rather have a tiny dragon, or a giant friendly dog?',
+      'Would you rather live where everyone sings, or where everyone dances?',
+      'Would you rather be able to pause time for one hour daily, or add one year to your life?',
+      'Would you rather know the origin of the universe, or its ultimate fate?',
+      'Would you rather be able to erase one fear, or create one courage?',
+      'Would you rather always find exactly what you need, or never need much at all?',
+      'Would you rather have one conversation with anyone who ever lived, or anyone who will live?',
+      'Would you rather have a personal robot, or a personal time machine?',
+      'Would you rather be remembered by history, or remembered by your family?',
+      'Would you rather never feel physical pain, or never feel emotional pain?',
+      'Would you rather have perfect balance, or perfect timing?',
+      'Would you rather explore the deepest ocean, or the farthest galaxy?',
+      'Would you rather be able to turn any bad day around, or prevent one bad year?',
+      'Would you rather have a window into anyone\'s dreams, or your own future?',
+      'Would you rather be free from all expectations, or certain of your purpose?',
+      'Would you rather own a restaurant, or a cinema?',
+      'Would you rather always have the right tool, or the right person?',
+      'Would you rather live without news, or without entertainment?',
+      'Would you rather be an expert in why things happen, or how things happen?',
+      'Would you rather have a voice that moves people, or hands that build anything?',
+      'Would you rather start over in a new city, or stay and change your current one?',
+      'Would you rather know every secret in your family, or have every secret kept?',
+      'Would you rather never be misunderstood, or never misunderstand anyone?'
+    ];
+
+    const button = document.querySelector('#generate');
+    const text = document.querySelector('#dilemma-text');
+    const card = document.querySelector('.dilemma');
+    let previousIndex = -1;
+
+    button.addEventListener('click', () => {
+      let index;
+      do {
+        index = Math.floor(Math.random() * dilemmas.length);
+      } while (dilemmas.length > 1 && index === previousIndex);
+
+      previousIndex = index;
+      text.textContent = dilemmas[index];
+      card.classList.remove('is-new');
+      void card.offsetWidth;
+      card.classList.add('is-new');
+    });
+  </script>
+</body>
+</html>
