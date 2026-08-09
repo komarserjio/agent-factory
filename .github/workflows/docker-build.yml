@@ -6,6 +6,7 @@ on:
     paths:
       - Dockerfile
       - .dockerignore
+      - deployment/docker-compose.yml
       - .github/workflows/docker-build.yml
       - package.json
       - package-lock.json
@@ -16,6 +17,7 @@ on:
     paths:
       - Dockerfile
       - .dockerignore
+      - deployment/docker-compose.yml
       - .github/workflows/docker-build.yml
       - package.json
       - package-lock.json
@@ -64,3 +66,40 @@ jobs:
           labels: ${{ steps.metadata.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Connect to Tailscale
+        if: env.CAN_PUBLISH == 'true'
+        uses: tailscale/github-action@v3
+        with:
+          authkey: ${{ secrets.TS_AUTHKEY }}
+
+      - name: Deploy to server
+        if: env.CAN_PUBLISH == 'true'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          APP_NAME: ${{ github.event.repository.name }}
+          IMAGE_TAG: sha-${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          install -m 700 -d "$HOME/.ssh"
+          install -m 600 /dev/null "$HOME/.ssh/deploy_key"
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$HOME/.ssh/deploy_key"
+
+          SSH=(ssh -i "$HOME/.ssh/deploy_key" -p "${DEPLOY_PORT:-22}" -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new)
+          SCP=(scp -i "$HOME/.ssh/deploy_key" -P "${DEPLOY_PORT:-22}" -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new)
+          REMOTE="$DEPLOY_USER@$DEPLOY_HOST"
+
+          "${SSH[@]}" "$REMOTE" "mkdir -p ~/docker/apps/$APP_NAME"
+          "${SCP[@]}" deployment/docker-compose.yml "$REMOTE:docker/apps/$APP_NAME/docker-compose.yml"
+          printf '%s' "$GHCR_TOKEN" | "${SSH[@]}" "$REMOTE" "docker login ghcr.io --username '$GHCR_USERNAME' --password-stdin"
+          "${SSH[@]}" "$REMOTE" "APP_NAME='$APP_NAME' IMAGE_NAME='$IMAGE_NAME' IMAGE_TAG='$IMAGE_TAG' sh -s" <<'REMOTE_SCRIPT'
+          set -eu
+          cd "\$HOME/docker/apps/\$APP_NAME"
+          IMAGE_NAME="\$IMAGE_NAME" IMAGE_TAG="\$IMAGE_TAG" APP_NAME="\$APP_NAME" docker compose up -d --pull always
+          REMOTE_SCRIPT
