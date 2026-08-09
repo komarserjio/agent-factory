@@ -73,6 +73,16 @@ jobs:
         with:
           authkey: ${{ secrets.TS_AUTHKEY }}
 
+      - name: Verify Tailscale connection
+        if: env.CAN_PUBLISH == 'true'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          set -euo pipefail
+          tailscale status --json | jq -e '.BackendState == "Running"' >/dev/null
+          tailscale ip -4 >/dev/null
+          tailscale ping --c=1 "$DEPLOY_HOST"
+
       - name: Deploy to server
         if: env.CAN_PUBLISH == 'true'
         env:
