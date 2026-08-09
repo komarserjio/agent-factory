@@ -47,7 +47,7 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=pr
-            type=sha
+            type=sha,format=long
 
       - name: Log in to GitHub Container Registry
         if: env.CAN_PUBLISH == 'true'
