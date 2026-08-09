@@ -100,6 +100,6 @@ jobs:
           printf '%s' "$GHCR_TOKEN" | "${SSH[@]}" "$REMOTE" "docker login ghcr.io --username '$GHCR_USERNAME' --password-stdin"
           "${SSH[@]}" "$REMOTE" "APP_NAME='$APP_NAME' IMAGE_NAME='$IMAGE_NAME' IMAGE_TAG='$IMAGE_TAG' sh -s" <<'REMOTE_SCRIPT'
           set -eu
-          cd "\$HOME/docker/apps/\$APP_NAME"
-          IMAGE_NAME="\$IMAGE_NAME" IMAGE_TAG="\$IMAGE_TAG" APP_NAME="\$APP_NAME" docker compose up -d --pull always
+          cd "$HOME/docker/apps/$APP_NAME"
+          IMAGE_NAME="$IMAGE_NAME" IMAGE_TAG="$IMAGE_TAG" APP_NAME="$APP_NAME" docker compose up -d --pull always
           REMOTE_SCRIPT
