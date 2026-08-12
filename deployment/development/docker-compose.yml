@@ -1,0 +1,24 @@
+services:
+  app:
+    image: ${IMAGE_NAME:?IMAGE_NAME is required}:${IMAGE_TAG:?IMAGE_TAG is required}
+    container_name: ${APP_NAME:-app}
+    restart: unless-stopped
+
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+
+    networks:
+      - traefik
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${APP_NAME:-app}.rule=PathPrefix(`/${APP_NAME:-app}`)"
+      - "traefik.http.routers.${APP_NAME:-app}.entrypoints=web"
+      - "traefik.http.middlewares.${APP_NAME:-app}-strip.stripprefix.prefixes=/${APP_NAME:-app}"
+      - "traefik.http.routers.${APP_NAME:-app}.middlewares=${APP_NAME:-app}-strip"
+      - "traefik.http.services.${APP_NAME:-app}.loadbalancer.server.port=3000"
+
+networks:
+  traefik:
+    external: true

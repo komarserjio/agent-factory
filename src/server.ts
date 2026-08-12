@@ -12,7 +12,7 @@ const server = createServer((request, response) => {
   const statusCode = isWelcomeRequest ? 200 : 404;
   const body = JSON.stringify(
     isWelcomeRequest
-      ? { message: "Hello, world!" }
+      ? { message: "Hello, world!", nodeEnv: process.env.NODE_ENV ?? "undefined" }
       : { message: "Not found" },
   );
 

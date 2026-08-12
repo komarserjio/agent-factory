@@ -6,7 +6,8 @@ on:
     paths:
       - Dockerfile
       - .dockerignore
-      - deployment/docker-compose.yml
+      - deployment/production/docker-compose.yml
+      - deployment/development/docker-compose.yml
       - .github/workflows/docker-build.yml
       - package.json
       - package-lock.json
@@ -17,7 +18,8 @@ on:
     paths:
       - Dockerfile
       - .dockerignore
-      - deployment/docker-compose.yml
+      - deployment/production/docker-compose.yml
+      - deployment/development/docker-compose.yml
       - .github/workflows/docker-build.yml
       - package.json
       - package-lock.json
@@ -92,10 +94,23 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
           GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
-          APP_NAME: ${{ github.event.repository.name }}
+          REPOSITORY_NAME: ${{ github.event.repository.name }}
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
           IMAGE_TAG: sha-${{ github.sha }}
         run: |
           set -euo pipefail
+
+          BRANCH_SUFFIX="${BRANCH_NAME##*/}"
+          BRANCH_SUFFIX="$(printf '%s' "$BRANCH_SUFFIX" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9-' '-')"
+          BRANCH_SUFFIX="${BRANCH_SUFFIX#-}"
+          BRANCH_SUFFIX="${BRANCH_SUFFIX%-}"
+          if [ "$BRANCH_SUFFIX" = "main" ]; then
+            APP_NAME="$REPOSITORY_NAME"
+            DEPLOYMENT_FILE="production/docker-compose.yml"
+          else
+            APP_NAME="$REPOSITORY_NAME-$BRANCH_SUFFIX"
+            DEPLOYMENT_FILE="development/docker-compose.yml"
+          fi
 
           install -m 700 -d "$HOME/.ssh"
           install -m 600 /dev/null "$HOME/.ssh/deploy_key"
@@ -106,7 +121,7 @@ jobs:
           REMOTE="$DEPLOY_USER@$DEPLOY_HOST"
 
           "${SSH[@]}" "$REMOTE" "mkdir -p ~/docker/apps/$APP_NAME"
-          "${SCP[@]}" deployment/docker-compose.yml "$REMOTE:docker/apps/$APP_NAME/docker-compose.yml"
+          "${SCP[@]}" "deployment/$DEPLOYMENT_FILE" "$REMOTE:docker/apps/$APP_NAME/docker-compose.yml"
           printf '%s' "$GHCR_TOKEN" | "${SSH[@]}" "$REMOTE" "docker login ghcr.io --username '$GHCR_USERNAME' --password-stdin"
           "${SSH[@]}" "$REMOTE" "APP_NAME='$APP_NAME' IMAGE_NAME='$IMAGE_NAME' IMAGE_TAG='$IMAGE_TAG' sh -s" <<'REMOTE_SCRIPT'
           set -eu
